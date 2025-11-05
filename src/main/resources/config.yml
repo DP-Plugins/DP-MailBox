@@ -1,0 +1,5 @@
+Settings:
+  prefix: "&f[ &eDP-MailBox &f] "
+  Lang: en_US
+
+  expireSeconds: 604800 # 7 days
