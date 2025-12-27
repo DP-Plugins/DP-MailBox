@@ -52,7 +52,7 @@ public class DPMBFunction {
     public static void sendItemToAll(Player p) {
         ItemStack item = p.getInventory().getItemInMainHand().clone();
         if (item == null || item.getType().isAir()) {
-            p.sendMessage(plugin.prefix + "보낼 아이템을 손에 들고 있어야 합니다.");
+            p.sendMessage(plugin.prefix + plugin.getLang().get("hold_item_to_send"));
             return;
         }
         NBT.setStringTag(item, "dpmb_mailitem", new MailItem(item.clone(), new Date().getTime(), 0, 0).serialize());
@@ -63,10 +63,10 @@ public class DPMBFunction {
                     inv.addItem(item);
                     inv.applyChanges();
                     box.setInventory(inv);
-                    MailBox.udata.put(box.getUUID(), box);
-                    if (Bukkit.getOfflinePlayer(box.getUUID()).isOnline()) {
-                        Player user = Bukkit.getPlayer(box.getUUID());
-                        user.sendMessage(plugin.prefix + "새로운 메일이 도착했습니다!");
+                    MailBox.udata.put(box.getOwnerUUID(), box);
+                    if (Bukkit.getOfflinePlayer(box.getOwnerUUID()).isOnline()) {
+                        Player user = Bukkit.getPlayer(box.getOwnerUUID());
+                        user.sendMessage(plugin.prefix + plugin.getLang().get("new_mail_arrived"));
                     }
                     break;
                 } else {
@@ -83,29 +83,29 @@ public class DPMBFunction {
                 return pi;
             });
         }
-        p.sendMessage(plugin.prefix + "아이템을 모든 유저의 메일함으로 보냈습니다.");
+        p.sendMessage(plugin.prefix + plugin.getLang().get("item_sent_to_all"));
     }
 
     public static void sendItemToPlayer(CommandSender sender, String sReceiver, boolean isAdmin) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(plugin.prefix + "플레이어만 사용할 수 있는 명령어입니다.");
+            sender.sendMessage(plugin.prefix + plugin.getLang().get("player_only_command"));
             return;
         }
         Player p = (Player) sender;
         OfflinePlayer receiver = Bukkit.getOfflinePlayer(sReceiver);
         if(receiver.getUniqueId().equals(p.getUniqueId())) {
-            p.sendMessage(plugin.prefix + "자신에게는 아이템을 보낼 수 없습니다.");
+            p.sendMessage(plugin.prefix + plugin.getLang().get("cannot_send_to_self"));
             return;
         }
         ItemStack item = p.getInventory().getItemInMainHand();
         if (item == null || item.getType().isAir()) {
-            p.sendMessage(plugin.prefix + "보낼 아이템을 손에 들고 있어야 합니다.");
+            p.sendMessage(plugin.prefix + plugin.getLang().get("hold_item_to_send"));
             return;
         }
         NBT.setStringTag(item, "dpmb_mailitem", new MailItem(item.clone(), new Date().getTime(), 0, 0).serialize());
 
         if (!MailBox.udata.containsKey(receiver.getUniqueId())) {
-            p.sendMessage(plugin.prefix + "해당 유저의 메일함을 찾을 수 없습니다.");
+            p.sendMessage(plugin.prefix + plugin.getLang().get("mailbox_not_found"));
             return;
         }
 
@@ -117,10 +117,10 @@ public class DPMBFunction {
                 inv.addItem(item);
                 inv.applyChanges();
                 box.setInventory(inv);
-                MailBox.udata.put(box.getUUID(), box);
+                MailBox.udata.put(box.getOwnerUUID(), box);
                 if (receiver.isOnline()) {
-                    Player rp = Bukkit.getPlayer(box.getUUID());
-                    rp.sendMessage(plugin.prefix + "새로운 메일이 도착했습니다!");
+                    Player rp = Bukkit.getPlayer(box.getOwnerUUID());
+                    rp.sendMessage(plugin.prefix + plugin.getLang().get("new_mail_arrived"));
                 }
                 break;
             } else {
@@ -140,7 +140,7 @@ public class DPMBFunction {
         if (!isAdmin) {
             item.setAmount(0);
         }
-        sender.sendMessage(plugin.prefix + "아이템을 " + receiver.getName() + "님의 메일함으로 보냈습니다.");
+        sender.sendMessage(plugin.prefix + plugin.getLang().getWithArgs("item_sent_to_player", receiver.getName()));
     }
 
     public static void reloadConfig() {
@@ -150,12 +150,12 @@ public class DPMBFunction {
 
     public static void openMailBox(CommandSender p) {
         if (!(p instanceof Player)) {
-            p.sendMessage(plugin.prefix + "§f플레이어만 사용할 수 있는 명령어입니다.");
+            p.sendMessage(plugin.prefix + plugin.getLang().get("player_only_command"));
             return;
         }
         Player player = (Player) p;
         if (!MailBox.udata.containsKey(player.getUniqueId())) {
-            p.sendMessage(plugin.prefix + "§f메일함 데이터를 찾을 수 없습니다. 다시 시도해주세요.");
+            p.sendMessage(plugin.prefix + plugin.getLang().get("mailbox_data_not_found"));
             return;
         }
         UserMailBox box = MailBox.udata.get(player.getUniqueId());
@@ -163,12 +163,22 @@ public class DPMBFunction {
     }
 
     public static void adminOpenMailBox(CommandSender p, String player) {
-
+        if (!(p instanceof Player)) {
+            p.sendMessage(plugin.prefix + plugin.getLang().get("player_only_command"));
+            return;
+        }
+        OfflinePlayer target = Bukkit.getOfflinePlayer(player);
+        if (!MailBox.udata.containsKey(target.getUniqueId())) {
+            p.sendMessage(plugin.prefix + plugin.getLang().get("player_mailbox_not_found"));
+            return;
+        }
+        UserMailBox box = MailBox.udata.get(target.getUniqueId());
+        box.openMailBox((Player) p);
     }
 
     public static void adminSendItem(CommandSender p, String player) {
         if (!(p instanceof Player)) {
-            p.sendMessage(plugin.prefix + "플레이어만 사용할 수 있는 명령어입니다.");
+            p.sendMessage(plugin.prefix + plugin.getLang().get("player_only_command"));
             return;
         }
         if (player.equalsIgnoreCase("all")) {
@@ -188,7 +198,7 @@ public class DPMBFunction {
             plugin.config.set("Settings.expireSeconds", seconds);
             plugin.saveDataContainer();
         } catch (NumberFormatException e) {
-            p.sendMessage(plugin.prefix + "시간 형식이 올바르지 않습니다. 예: 3d 6h 0m 0s");
+            p.sendMessage(plugin.prefix + plugin.getLang().get("invalid_time_format"));
         }
     }
 

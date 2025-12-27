@@ -12,7 +12,7 @@ public class DPMBCommand {
     private final CommandBuilder builder = new CommandBuilder(plugin);
 
     public DPMBCommand() {
-        builder.addSubCommand("open", "dpmb.open", "/dpmb open", true, (p, args) -> {
+        builder.addSubCommand("open", "dpmb.open", plugin.getLang().get("command_usage_open"), true, (p, args) -> {
             if (args.length == 1) {
                 DPMBFunction.openMailBox(p);
                 return true;
@@ -20,7 +20,7 @@ public class DPMBCommand {
             return false;
         });
 
-        builder.addSubCommand("send", "dpmb.send", "/dpmb send <player>", true, (p, args) -> {
+        builder.addSubCommand("send", "dpmb.send", plugin.getLang().get("command_usage_send"), true, (p, args) -> {
             if (args.length == 2) {
                 DPMBFunction.sendItemToPlayer(p, args[1], false);
                 return true;
@@ -28,7 +28,7 @@ public class DPMBCommand {
             return false;
         });
 
-        builder.addSubCommand("admin", "dpmb.admin", "/dpmb admin open <player>", true, (p, args) -> {
+        builder.addSubCommand("admin", "dpmb.admin", plugin.getLang().get("command_usage_admin"), true, (p, args) -> {
             if (args.length == 3 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("open")) {
                 DPMBFunction.adminOpenMailBox(p, args[2]);
                 return true;
