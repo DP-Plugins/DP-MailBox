@@ -18,7 +18,7 @@ public class MailBox extends DPlugin {
     public int expireSeconds;
 
     public MailBox() {
-        super(false);
+        super(true);
         plugin = this;
         init();
         udata = loadDataContainer(new DataContainer<>(plugin, DataType.CUSTOM, "udata"), UserMailBox.class);

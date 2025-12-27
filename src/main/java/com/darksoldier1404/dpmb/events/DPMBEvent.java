@@ -16,6 +16,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.UUID;
+
 import static com.darksoldier1404.dpmb.MailBox.plugin;
 
 public class DPMBEvent implements Listener {
@@ -31,10 +33,10 @@ public class DPMBEvent implements Listener {
 
     @EventHandler
     public void onInventoryClose(DInventoryCloseEvent e) {
-        Player p = (Player) e.getPlayer();
         DInventory inv = e.getDInventory();
         if (inv.isValidHandler(plugin)) {
             if (inv.isValidChannel(0)) { // user mailbox save
+                UUID uuid = (UUID) inv.getObj();
                 inv.applyChanges();
                 inv.applyAllItemChanges(pi -> {
                     ItemStack item = pi.getItem();
@@ -48,11 +50,12 @@ public class DPMBEvent implements Listener {
                     pi.setItem(mi.getAsItemStack());
                     return pi;
                 });
-                if (plugin.udata.containsKey(p.getUniqueId())) {
-                    UserMailBox user = plugin.udata.get(p.getUniqueId());
+                if (plugin.udata.containsKey(uuid)) {
+                    UserMailBox user = plugin.udata.get(uuid);
                     user.setInventory(inv);
-                    plugin.udata.put(p.getUniqueId(), user);
-                    plugin.udata.save(p.getUniqueId());
+                    user.setOpened(false);
+                    plugin.udata.put(uuid, user);
+                    plugin.udata.save(uuid);
                 }
                 return;
             }
@@ -81,9 +84,9 @@ public class DPMBEvent implements Listener {
                     }
                     item.setAmount(0);
                     inv.applyChanges();
-                    p.sendMessage(plugin.getPrefix() + "§a메일을 수령하였습니다.");
+                    p.sendMessage(plugin.getPrefix() + plugin.getLang().get("mail_received"));
                 } else {
-                    p.sendMessage(plugin.getPrefix() + "§c인벤토리에 공간이 부족합니다.");
+                    p.sendMessage(plugin.getPrefix() + plugin.getLang().get("inventory_full"));
                 }
                 return;
             }
