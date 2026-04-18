@@ -2,6 +2,7 @@ package com.darksoldier1404.dpmb.functions;
 
 import com.darksoldier1404.dpmb.MailBox;
 import com.darksoldier1404.dpmb.obj.MailItem;
+import com.darksoldier1404.dpmb.obj.Presets;
 import com.darksoldier1404.dpmb.obj.UserMailBox;
 import com.darksoldier1404.dppc.api.inventory.DInventory;
 import com.darksoldier1404.dppc.utils.NBT;
@@ -14,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.UUID;
 
 import static com.darksoldier1404.dpmb.MailBox.plugin;
 
@@ -55,7 +57,7 @@ public class DPMBFunction {
             p.sendMessage(plugin.prefix + plugin.getLang().get("hold_item_to_send"));
             return;
         }
-        NBT.setStringTag(item, "dpmb_mailitem", new MailItem(item.clone(), new Date().getTime(), 0, 0).serialize());
+        NBT.setStringTag(item, "dpmb_mailitem", new MailItem(new Date().getTime(), 0, 0).serialize());
         for (UserMailBox box : MailBox.udata.values()) {
             DInventory inv = box.getInventory();
             while (true) {
@@ -79,11 +81,52 @@ public class DPMBFunction {
                 MailItem mi = MailItem.deserialize(NBT.getStringTag(pi.getItem(), "dpmb_mailitem"));
                 mi.setPage(pi.getPage());
                 mi.setSlot(pi.getSlot());
-                pi.setItem(NBT.setStringTag(mi.getItem(), "dpmb_mailitem", mi.serialize()));
+                pi.setItem(NBT.setStringTag(pi.getItem(), "dpmb_mailitem", mi.serialize()));
                 return pi;
             });
         }
         p.sendMessage(plugin.prefix + plugin.getLang().get("item_sent_to_all"));
+    }
+
+    // send item to player as api
+    public static void sendItemToPlayer(UUID target, ItemStack item) {
+        if (item == null || item.getType().isAir()) {
+            return;
+        }
+        NBT.setStringTag(item, "dpmb_mailitem", new MailItem(new Date().getTime(), 0, 0).serialize());
+
+        if (!MailBox.udata.containsKey(target)) {
+            return;
+        }
+
+        UserMailBox box = MailBox.udata.get(target);
+        DInventory inv = box.getInventory();
+
+        while (true) {
+            if (hasEnoughSpace(inv.getContents(), item)) {
+                inv.addItem(item);
+                inv.applyChanges();
+                box.setInventory(inv);
+                MailBox.udata.put(box.getOwnerUUID(), box);
+                if (Bukkit.getOfflinePlayer(box.getOwnerUUID()).isOnline()) {
+                    Player rp = Bukkit.getPlayer(box.getOwnerUUID());
+                    rp.sendMessage(plugin.prefix + plugin.getLang().get("new_mail_arrived"));
+                }
+                break;
+            } else {
+                inv.setPages(inv.getPages() + 1);
+                inv.nextPage();
+                inv.applyChanges();
+            }
+        }
+
+        inv.applyAllItemChanges(pi -> {
+            MailItem mi = MailItem.deserialize(NBT.getStringTag(pi.getItem(), "dpmb_mailitem"));
+            mi.setPage(pi.getPage());
+            mi.setSlot(pi.getSlot());
+            pi.setItem(NBT.setStringTag(pi.getItem(), "dpmb_mailitem", mi.serialize()));
+            return pi;
+        });
     }
 
     public static void sendItemToPlayer(CommandSender sender, String sReceiver, boolean isAdmin) {
@@ -93,7 +136,7 @@ public class DPMBFunction {
         }
         Player p = (Player) sender;
         OfflinePlayer receiver = Bukkit.getOfflinePlayer(sReceiver);
-        if(receiver.getUniqueId().equals(p.getUniqueId())) {
+        if (receiver.getUniqueId().equals(p.getUniqueId())) {
             p.sendMessage(plugin.prefix + plugin.getLang().get("cannot_send_to_self"));
             return;
         }
@@ -102,7 +145,7 @@ public class DPMBFunction {
             p.sendMessage(plugin.prefix + plugin.getLang().get("hold_item_to_send"));
             return;
         }
-        NBT.setStringTag(item, "dpmb_mailitem", new MailItem(item.clone(), new Date().getTime(), 0, 0).serialize());
+        NBT.setStringTag(item, "dpmb_mailitem", new MailItem(new Date().getTime(), 0, 0).serialize());
 
         if (!MailBox.udata.containsKey(receiver.getUniqueId())) {
             p.sendMessage(plugin.prefix + plugin.getLang().get("mailbox_not_found"));
@@ -134,7 +177,7 @@ public class DPMBFunction {
             MailItem mi = MailItem.deserialize(NBT.getStringTag(pi.getItem(), "dpmb_mailitem"));
             mi.setPage(pi.getPage());
             mi.setSlot(pi.getSlot());
-            pi.setItem(NBT.setStringTag(mi.getItem(), "dpmb_mailitem", mi.serialize()));
+            pi.setItem(NBT.setStringTag(pi.getItem(), "dpmb_mailitem", mi.serialize()));
             return pi;
         });
         if (!isAdmin) {
@@ -226,15 +269,55 @@ public class DPMBFunction {
         return totalSeconds;
     }
 
-    public static ItemStack getMailItemFromItemStack(ItemStack item) {
+    public static boolean isExistMailPreset(String presetName) {
+        return plugin.presets.containsKey(presetName);
+    }
+
+    public static void createMailPreset(Player p, String presetName) {
+        if (isExistMailPreset(presetName)) {
+            p.sendMessage(plugin.prefix + "해당 프리셋 이름은 이미 존재합니다.");
+            return;
+        }
+        Presets presets = new Presets(presetName);
+        plugin.presets.put(presetName, presets);
+        plugin.presets.save(presetName);
+        p.sendMessage(plugin.prefix + "메일 프리셋이 생성되었습니다: " + presetName);
+    }
+
+    public static void setMailPresetItem(Player p, String presetName) {
+        if (!isExistMailPreset(presetName)) {
+            p.sendMessage(plugin.prefix + "해당 프리셋 이름이 존재하지 않습니다.");
+            return;
+        }
+        ItemStack item = p.getInventory().getItemInMainHand();
         if (item == null || item.getType().isAir()) {
-            return null;
+            p.sendMessage(plugin.prefix + "설정할 아이템을 손에 들고 명령어를 사용해주세요.");
+            return;
         }
-        String serializedMailItem = NBT.getStringTag(item, "dpmb_mailitem");
-        if (serializedMailItem == null || serializedMailItem.isEmpty()) {
-            return null;
+        Presets presets = plugin.presets.get(presetName);
+        presets.setItem(item.clone());
+        plugin.presets.put(presetName, presets);
+        plugin.presets.save(presetName);
+        p.sendMessage(plugin.prefix + "메일 프리셋 아이템이 설정되었습니다: " + presetName);
+    }
+
+    public static void removeMailPreset(Player p, String presetName) {
+        if (!isExistMailPreset(presetName)) {
+            p.sendMessage(plugin.prefix + "해당 프리셋 이름이 존재하지 않습니다.");
+            return;
         }
-        MailItem mailItem = MailItem.deserialize(serializedMailItem);
-        return mailItem.getItem();
+        plugin.presets.delete(presetName);
+        plugin.presets.remove(presetName);
+        p.sendMessage(plugin.prefix + "메일 프리셋이 삭제되었습니다: " + presetName);
+    }
+
+    public static void sendPresetToPlayer(CommandSender sender, String targetPlayer, String presetName) {
+        if (!isExistMailPreset(presetName)) {
+            sender.sendMessage(plugin.prefix + "해당 프리셋 이름이 존재하지 않습니다.");
+            return;
+        }
+        Presets presets = plugin.presets.get(presetName);
+        presets.send(targetPlayer);
+        sender.sendMessage(plugin.prefix + "프리셋이 전송되었습니다: " + presetName + " -> " + targetPlayer);
     }
 }

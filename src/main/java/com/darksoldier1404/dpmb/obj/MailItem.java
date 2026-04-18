@@ -1,11 +1,6 @@
 package com.darksoldier1404.dpmb.obj;
 
-import com.darksoldier1404.dppc.utils.ItemStackSerializer;
-import com.darksoldier1404.dppc.utils.NBT;
-import org.bukkit.inventory.ItemStack;
-
 public class MailItem {
-    ItemStack item;
     long receiveDate;
     int page;
     int slot;
@@ -13,19 +8,10 @@ public class MailItem {
     public MailItem() {
     }
 
-    public MailItem(ItemStack item, long receiveDate, int page, int slot) {
-        this.item = item;
+    public MailItem(long receiveDate, int page, int slot) {
         this.receiveDate = receiveDate;
         this.page = page;
         this.slot = slot;
-    }
-
-    public ItemStack getItem() {
-        return item;
-    }
-
-    public void setItem(ItemStack item) {
-        this.item = item;
     }
 
     public long getReceiveDate() {
@@ -52,20 +38,15 @@ public class MailItem {
         this.slot = slot;
     }
 
-    public ItemStack getAsItemStack() {
-        return NBT.setStringTag(item.clone(), "dpmb_mailitem", this.serialize());
-    }
-
     public String serialize() {
-        return ItemStackSerializer.serialize(item) + ";" + receiveDate + ";" + page + ";" + slot;
+        return receiveDate + ";" + page + ";" + slot;
     }
 
     public static MailItem deserialize(String data) {
         String[] parts = data.split(";");
-        ItemStack item = ItemStackSerializer.deserialize(parts[0]);
-        long receiveDate = Long.parseLong(parts[1]);
-        int page = Integer.parseInt(parts[2]);
-        int slot = Integer.parseInt(parts[3]);
-        return new MailItem(item, receiveDate, page, slot);
+        long receiveDate = Long.parseLong(parts[0]);
+        int page = Integer.parseInt(parts[1]);
+        int slot = Integer.parseInt(parts[2]);
+        return new MailItem(receiveDate, page, slot);
     }
 }

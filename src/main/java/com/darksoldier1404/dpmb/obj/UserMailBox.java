@@ -60,12 +60,13 @@ public class UserMailBox implements DataCargo {
             return;
         }
         setOpened(true);
+        DInventory inventory = getInventory().clone();
         inventory.setCurrentPage(0);
         inventory.applyDefaultPageTools();
         inventory.update();
         inventory.applyAllItemChanges(pi -> {
             MailItem mi = MailItem.deserialize(NBT.getStringTag(pi.getItem(), "dpmb_mailitem"));
-            ItemStack item = mi.getAsItemStack();
+            ItemStack item = pi.getItem().clone();
             Date received = new Date(mi.getReceiveDate());
             long nowMs = new Date().getTime();
             long expireSeconds = plugin.expireSeconds;
