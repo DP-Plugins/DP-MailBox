@@ -1,5 +1,6 @@
 package com.darksoldier1404.dpmb;
 
+import com.darksoldier1404.dpmb.obj.Presets;
 import com.darksoldier1404.dpmb.obj.UserMailBox;
 import com.darksoldier1404.dppc.annotation.DPPCoreVersion;
 import com.darksoldier1404.dppc.data.DPlugin;
@@ -15,6 +16,7 @@ import java.util.UUID;
 public class MailBox extends DPlugin {
     public static MailBox plugin;
     public static DataContainer<UUID, UserMailBox> udata;
+    public static DataContainer<String, Presets> presets;
     public int expireSeconds;
 
     public MailBox() {
@@ -22,6 +24,7 @@ public class MailBox extends DPlugin {
         plugin = this;
         init();
         udata = loadDataContainer(new DataContainer<>(plugin, DataType.CUSTOM, "udata"), UserMailBox.class);
+        presets = loadDataContainer(new DataContainer<>(plugin, DataType.CUSTOM, "presets"), Presets.class);
         expireSeconds = config.getInt("Settings.expireSeconds", 604800);
     }
 

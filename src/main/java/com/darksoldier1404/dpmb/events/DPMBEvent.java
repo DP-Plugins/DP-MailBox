@@ -38,6 +38,7 @@ public class DPMBEvent implements Listener {
             if (inv.isValidChannel(0)) { // user mailbox save
                 UUID uuid = (UUID) inv.getObj();
                 inv.applyChanges();
+                UserMailBox user = plugin.udata.get(uuid);
                 inv.applyAllItemChanges(pi -> {
                     ItemStack item = pi.getItem();
                     if (item == null || item.getType().isAir()) {
@@ -46,12 +47,14 @@ public class DPMBEvent implements Listener {
                     if (!NBT.hasTagKey(item, "dpmb_mailitem")) {
                         return pi;
                     }
-                    MailItem mi = MailItem.deserialize(NBT.getStringTag(item, "dpmb_mailitem"));
-                    pi.setItem(mi.getAsItemStack());
+                    ItemStack original = user.getInventory().getPageItems().get(inv.getCurrentPage())[pi.getSlot()];
+                    if (original != null) {
+                        pi.setItem(original);
+                        return pi;
+                    }
                     return pi;
                 });
                 if (plugin.udata.containsKey(uuid)) {
-                    UserMailBox user = plugin.udata.get(uuid);
                     user.setInventory(inv);
                     user.setOpened(false);
                     plugin.udata.put(uuid, user);
@@ -69,6 +72,7 @@ public class DPMBEvent implements Listener {
             Player p = (Player) e.getWhoClicked();
             ItemStack item = e.getCurrentItem();
             if (item == null || item.getType().isAir()) {
+                e.setCancelled(true);
                 return;
             }
             if (inv.isValidChannel(0)) { // user mailbox click event
@@ -78,7 +82,13 @@ public class DPMBEvent implements Listener {
                 }
                 e.setCancelled(true);
                 if (InventoryUtils.hasEnoughSpace(p.getInventory().getStorageContents(), item)) {
-                    ItemStack r = DPMBFunction.getMailItemFromItemStack(item);
+                    DInventory.PageItemSet pis = e.getPageItemSet();
+                    if (pis == null) return;
+                    int slot = pis.getSlot();
+                    int page = inv.getCurrentPage();
+                    UserMailBox user = plugin.udata.get(p.getUniqueId());
+                    ItemStack r = user.getInventory().getPageItems().get(page)[slot];
+                    NBT.removeTag(r, "dpmb_mailitem");
                     if (r != null) {
                         p.getInventory().addItem(r);
                     }
@@ -88,7 +98,6 @@ public class DPMBEvent implements Listener {
                 } else {
                     p.sendMessage(plugin.getPrefix() + plugin.getLang().get("inventory_full"));
                 }
-                return;
             }
         }
     }
