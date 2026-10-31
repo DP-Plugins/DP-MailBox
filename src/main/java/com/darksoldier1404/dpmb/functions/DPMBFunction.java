@@ -320,4 +320,28 @@ public class DPMBFunction {
         presets.send(targetPlayer);
         sender.sendMessage(plugin.prefix + "프리셋이 전송되었습니다: " + presetName + " -> " + targetPlayer);
     }
+
+    public static void sendPresetToEveryOnlinePlayer(CommandSender sender, String presetName) {
+        if (!isExistMailPreset(presetName)) {
+            sender.sendMessage(plugin.prefix + "해당 프리셋 이름이 존재하지 않습니다.");
+            return;
+        }
+        Presets presets = plugin.presets.get(presetName);
+        for (Player targetPlayer : Bukkit.getOnlinePlayers()) {
+            presets.send(targetPlayer.getUniqueId());
+            sender.sendMessage(plugin.prefix + "프리셋이 전송되었습니다: " + presetName + " -> " + targetPlayer);
+        }
+    }
+
+    public static void sendPresetToEveryPlayerIncludeOffline(CommandSender sender, String presetName) {
+        if (!isExistMailPreset(presetName)) {
+            sender.sendMessage(plugin.prefix + "해당 프리셋 이름이 존재하지 않습니다.");
+            return;
+        }
+        Presets presets = plugin.presets.get(presetName);
+        for (OfflinePlayer targetPlayer : Bukkit.getOfflinePlayers()) {
+            presets.send(targetPlayer.getUniqueId());
+            sender.sendMessage(plugin.prefix + "프리셋이 전송되었습니다: " + presetName + " -> " + targetPlayer);
+        }
+    }
 }
