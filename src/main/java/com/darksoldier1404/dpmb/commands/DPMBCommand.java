@@ -49,6 +49,22 @@ public class DPMBCommand {
                     DPMBFunction.sendPresetToPlayer(p, targetPlayer, presetName);
                     return true;
                 });
+        builder.beginSubCommand("sendpresettoonlineplayers", "/dpmb sendpresettoonlineplayers <preset_name> - Send a mail preset to a online players")
+                .withPermission("dpmb.admin")
+                .withArgument(ArgumentIndex.ARG_1, ArgumentType.STRING, plugin.presets.keySet())
+                .executes((p, args) -> {
+                    String presetName = args.getString(ArgumentIndex.ARG_1);
+                    DPMBFunction.sendPresetToEveryOnlinePlayer(p, presetName);
+                    return true;
+                });
+        builder.beginSubCommand("sendpresettoeveryplayerincludeoffline", "/dpmb sendpresettoeveryplayerincludeoffline <preset_name> - Send a mail preset to every players include offline")
+                .withPermission("dpmb.admin")
+                .withArgument(ArgumentIndex.ARG_1, ArgumentType.STRING, plugin.presets.keySet())
+                .executes((p, args) -> {
+                    String presetName = args.getString(ArgumentIndex.ARG_1);
+                    DPMBFunction.sendPresetToEveryPlayerIncludeOffline(p, presetName);
+                    return true;
+                });
         builder.addSubCommand("open", "dpmb.open", plugin.getLang().get("command_usage_open"), true, (p, args) -> {
             if (args.length == 1) {
                 DPMBFunction.openMailBox(p);
